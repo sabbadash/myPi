@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <sys/sysinfo.h>
 #include <pthread.h>
+#include <time.h>
 
 #define LED_PATH "/sys/class/leds/ACT/"
 #define TRIGGER_FILE "trigger"
@@ -92,7 +93,7 @@ void *led_thread(void *arg) {
         
         // Выключаем светодиод
         write_to_file(BRIGHTNESS_FILE, "0");
-        usleep(100000); // 100 мс
+        usleep(100000);
     }
     return NULL;
 }
@@ -115,7 +116,7 @@ int main(void) {
     }
     
     printf("программа светодиода запущена.\n");
-    printf("светодиод будет мигать каждую секунду.  Ctrl+C для выхода.\n");
+    printf("светодиод будет мигать каждую секунду.  ctrl+c для выхода.\n");
     
     // отдельный поток для мигания светодиодом
     if (pthread_create(&led_thread_id, NULL, led_thread, NULL) != 0) {
@@ -138,13 +139,17 @@ int main(void) {
         printf("память: %.2f%%\n", memory_usage);
         printf("диска: %.2f%%\n", disk_usage);
         printf("светодиод: мигает\n");
-        printf("======================================\n");
+        printf("====================================\n");
         printf("ctrl+c для выхода\n");
         
         if (log_fp) {
             time_t now = time(NULL);
-            fprintf(log_fp, "%ld,%.2f,%.2f,%.2f,\n", 
-                    now, cpu_temp, memory_usage, disk_usage);
+            struct tm *tm_info = localtime(&now);
+            char time_str[26];
+            strftime(time_str, 26, "%d-%m-%Y %H:%M:%S", tm_info);
+
+            fprintf(log_fp, "%s,%.2f,%.2f,%.2f,\n", 
+                    time_str, cpu_temp, memory_usage, disk_usage);
             fflush(log_fp);
         }
 
