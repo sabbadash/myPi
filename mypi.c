@@ -10,7 +10,9 @@
 #define TRIGGER_FILE "trigger"
 #define BRIGHTNESS_FILE "brightness"
 #define MONITORING_INTERVAL_SEC 5  // интервал сбора метрик
+#define LOG_FILE "system_metrics.csv"
 
+FILE *log_fp = NULL;
 volatile int running = 1;
 pthread_t led_thread_id;
 
@@ -98,7 +100,14 @@ void *led_thread(void *arg) {
 int main(void) {
     // регистрация обработчика сигнала
     signal(SIGINT, handle_signal);
-    
+    log_fp = fopen(LOG_FILE, "a");
+    if (log_fp) {
+        fseek(log_fp, 0, SEEK_END);
+        if (ftell(log_fp) == 0) {
+            fprintf(log_fp, "timestamp,cpu_temp,cpu_usage,memory_usage,disk_usage\n");
+        }
+    }
+
     //отключаем стандартный триггер для управления вручную
     if (write_to_file(TRIGGER_FILE, "none") != 0) {
         printf("ошибка установки триггера. программа запущена не от имени root.\n");
@@ -132,6 +141,13 @@ int main(void) {
         printf("======================================\n");
         printf("ctrl+c для выхода\n");
         
+        if (log_fp) {
+            time_t now = time(NULL);
+            fprintf(log_fp, "%ld,%.2f,%.2f,%.2f,\n", 
+                    now, cpu_temp, memory_usage, disk_usage);
+            fflush(log_fp);
+        }
+
         // проверка критических значений и изменение частоты мигания можно добавить здесь
         
         // ожидание до следующего обновления статистики
@@ -143,6 +159,7 @@ int main(void) {
     
     // восстанавливаем стандартный триггер при выходе
     write_to_file(TRIGGER_FILE, "mmc0");
+    if (log_fp) fclose(log_fp);
     printf("программа завершена.\n");
     
     return 0;
