@@ -104,7 +104,7 @@ int main(void) {
     if (log_fp) {
         fseek(log_fp, 0, SEEK_END);
         if (ftell(log_fp) == 0) {
-            fprintf(log_fp, "timestamp,cpu_temp,cpu_usage,memory_usage,disk_usage\n");
+            fprintf(log_fp, "timestamp,cpu_temp,memory_usage,disk_usage\n");
         }
     }
 
